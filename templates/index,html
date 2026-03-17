@@ -2,97 +2,67 @@
 <html lang="mr">
 <head>
     <meta charset="UTF-8">
-    <title>माहिती नोंदणी फॉर्म</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Collection Form</title>
     <style>
-        body { font-family: 'Arial', sans-serif; background-color: #f4f7f6; padding: 20px; }
-        .form-container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
-        .neta-name { font-family: 'Poppins', sans-serif; font-size: 22px; color: #2c3e50; margin: 10px 0 20px 0; text-transform: uppercase; text-align: center; }
-        .input-group { margin-bottom: 15px; }
-        label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; }
-        input[type="text"], input[type="date"], input[type="tel"], select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 10px; }
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
+        .container { max-width: 500px; background: white; padding: 20px; border-radius: 10px; margin: auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .logo { text-align: center; margin-bottom: 20px; }
+        .logo img { max-width: 150px; }
+        input, select, button { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        button { background-color: #28a745; color: white; border: none; cursor: pointer; font-size: 16px; }
         button:hover { background-color: #218838; }
-        .profile-img { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #1a73e8; display: block; margin: 0 auto; }
     </style>
-</head>
-<body>
-
-    <div class="form-container">
-        <div style="text-align: center;">
-            <img src="{{ url_for('static', filename='profile.jpg') }}" alt="Profile Photo" class="profile-img">
-            <h2 class="neta-name">माननीय आमदार सुहास आण्णा कांदे</h2>
-        </div>
-
-        <h3 style="text-align:center; color: #555;">माहिती नोंदणी</h3>
-        
-        <form action="/submit" method="POST">
-            <div class="input-group">
-                <label>संपूर्ण नाव</label>
-                <input type="text" name="full_name" placeholder="उदा. राहुल सुरेश पाटील" required>
-            </div>
-
-            <div class="input-group">
-                <label>जन्मतारीख</label>
-                <input type="date" name="dob" required>
-            </div>
-
-            <div class="input-group">
-                <label>मोबाईल नंबर</label>
-                <input type="tel" name="mobile" placeholder="१० अंकी मोबाईल नंबर" pattern="[0-9]{10}" required>
-            </div>
-
-            <div class="input-group">
-                <label>तालुका निवडा</label>
-                <select id="taluka" name="taluka" onchange="updateVillages()" required>
-                    <option value="" disabled selected>निवडा...</option>
-                    <option value="नांदगाव">नांदगाव</option>
-                    <option value="मालेगाव">मालेगाव</option>
-                </select>
-            </div>
-
-            <div class="input-group">
-                <label>गाव निवडा</label>
-                <select id="village" name="village" required>
-                    <option value="" disabled selected>आधी तालुका निवडा</option>
-                </select>
-            </div>
-
-            <div class="input-group">
-                <label>लिंग</label>
-                <input type="radio" name="gender" value="पुरुष" required> पुरुष &nbsp;
-                <input type="radio" name="gender" value="महिला"> महिला
-            </div>
-
-            <div class="input-group">
-                <label>व्यवसाय</label>
-                <select name="occupation">
-                    <option value="शेतकरी">शेतकरी</option>
-                    <option value="व्यापारी">व्यापारी</option>
-                    <option value="नोकरी">नोकरी</option>
-                    <option value="विद्यार्थी">विद्यार्थी</option>
-                    <option value="इतर">इतर</option>
-                </select>
-            </div>
-
-            <button type="submit">माहिती जतन करा</button>
-        </form>
-    </div>
-
     <script>
-        const data = {{ villages_data | tojson }};
         function updateVillages() {
-            const taluka = document.getElementById('taluka').value;
-            const villageSelect = document.getElementById('village');
-            villageSelect.innerHTML = '<option value="" disabled selected>गाव निवडा</option>';
-            if (data[taluka]) {
-                data[taluka].forEach(v => {
-                    let opt = document.createElement('option');
-                    opt.value = v; opt.innerHTML = v;
+            var taluka = document.getElementById("taluka").value;
+            var villageSelect = document.getElementById("village");
+            var villages = {{ villages_data | tojson }};
+            
+            villageSelect.innerHTML = '<option value="">गाव निवडा</option>';
+            if (villages[taluka]) {
+                villages[taluka].forEach(function(v) {
+                    var opt = document.createElement("option");
+                    opt.value = v;
+                    opt.innerHTML = v;
                     villageSelect.appendChild(opt);
                 });
             }
         }
     </script>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
+        </div>
+        <h2 style="text-align:center;">माहिती संकलन फॉर्म</h2>
+        <form action="/submit" method="post">
+            <input type="text" name="full_name" placeholder="पूर्ण नाव" required>
+            <input type="date" name="dob" required>
+            <input type="number" name="mobile" placeholder="मोबाईल नंबर" required>
+            
+            <select name="taluka" id="taluka" onchange="updateVillages()" required>
+                <option value="">तालुका निवडा</option>
+                <option value="नांदगाव">नांदगाव</option>
+                <option value="मालेगाव">मालेगाव</option>
+            </select>
+            
+            <select name="village" id="village" required>
+                <option value="">गाव निवडा</option>
+            </select>
+            
+            <select name="gender" required>
+                <option value="">लिंग निवडा</option>
+                <option value="पुरुष">पुरुष</option>
+                <option value="महिला">महिला</option>
+                <option value="इतर">इतर</option>
+            </select>
+            
+            <input type="text" name="occupation" placeholder="व्यवसाय" required>
+            
+            <button type="submit">माहिती जतन करा</button>
+        </form>
+    </div>
 </body>
 </html>
