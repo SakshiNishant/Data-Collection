@@ -5,90 +5,90 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>माहिती संकलन फॉर्म</title>
     <style>
-        /* मुख्य डिझाइन */
-        body { 
-            font-family: 'Segoe UI', Arial, sans-serif; 
-            background-color: #f0f2f5; 
-            padding: 20px; 
-            margin: 0;
-        }
-        .container { 
-            max-width: 450px; 
-            background: #ffffff; 
-            padding: 25px; 
-            border-radius: 15px; 
-            margin: auto; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
-        }
-
-        /* हेडर (लोगो आणि फोटो) विभाग */
-        .header { 
-            text-align: center; 
-            margin-bottom: 20px; 
-        }
-        .logo { 
-            max-width: 100px; 
-            height: auto; 
-            margin-bottom: 10px;
-        }
-        .banner-photo { 
-            width: 100%; 
-            height: auto; 
-            border-radius: 10px; 
-            object-fit: cover;
-            margin-top: 10px;
-        }
-
-        h2 { 
-            text-align: center; 
-            color: #1a73e8; 
-            margin-bottom: 20px;
-            font-size: 22px;
-        }
-
-        /* इनपुट आणि ड्रॉपडाउन डिझाइन */
-        label {
-            font-weight: bold;
-            display: block;
-            margin-top: 10px;
-            color: #555;
-        }
-        input, select, button { 
-            width: 100%; 
-            padding: 12px; 
-            margin: 8px 0; 
-            border: 1px solid #ddd; 
-            border-radius: 8px; 
-            box-sizing: border-box; 
-            font-size: 16px; 
-        }
-        input:focus, select:focus {
-            border-color: #1a73e8;
-            outline: none;
-            box-shadow: 0 0 5px rgba(26,115,232,0.2);
-        }
-
-        /* बटण डिझाइन */
-        button { 
-            background-color: #1a73e8; 
-            color: white; 
-            border: none; 
-            cursor: pointer; 
-            font-weight: bold; 
-            margin-top: 20px;
-            transition: background 0.3s;
-        }
-        button:hover { 
-            background-color: #1557b0; 
-        }
-
-        /* मोबाईलसाठी रिस्पॉन्सिव्ह */
-        @media (max-width: 480px) {
-            .container { padding: 15px; }
-        }
+        body { font-family: 'Arial', sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }
+        .container { max-width: 450px; background: #fff; padding: 25px; border-radius: 12px; margin: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .header { text-align: center; margin-bottom: 20px; }
+        .header img.logo { max-width: 80px; margin-bottom: 10px; }
+        .header img.photo { width: 100%; border-radius: 8px; }
+        h2 { text-align: center; color: #2c3e50; font-size: 20px; }
+        label { font-weight: bold; display: block; margin-top: 15px; color: #444; }
+        input, select, button { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+        button { background-color: #27ae60; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 25px; }
+        button:hover { background-color: #219150; }
     </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="{{ url_for('static', filename='logo.png') }}" class="logo" onerror="this.style.display='none'">
+            <img src="{{ url_for('static', filename='photo.jpg') }}" class="photo" onerror="this.style.display='none'">
+        </div>
+        
+        <h2>माहिती संकलन फॉर्म</h2>
+        
+        <form action="/submit" method="post">
+            <label>पूर्ण नाव</label>
+            <input type="text" name="full_name" placeholder="नाव लिहा" required>
+
+            <label>जन्मतारीख</label>
+            <input type="date" name="dob" required>
+
+            <label>मोबाईल नंबर</label>
+            <input type="number" name="mobile" placeholder="Mobile No" required>
+
+            <label>तालुका निवडा</label>
+            <select name="taluka" id="taluka" onchange="updateVillages()" required>
+                <option value="">निवडा</option>
+                <option value="नांदगाव">नांदगाव</option>
+                <option value="मालेगाव">मालेगाव</option>
+            </select>
+
+            <label>गाव निवडा</label>
+            <select name="village" id="village" required>
+                <option value="">आधी तालुका निवडा</option>
+            </select>
+
+            <label>लिंग</label>
+            <select name="gender" required>
+                <option value="">निवडा</option>
+                <option value="पुरुष">पुरुष</option>
+                <option value="महिला">महिला</option>
+                <option value="इतर">इतर</option>
+            </select>
+
+            <label>व्यवसाय निवडा</label>
+            <select name="occupation" required>
+                <option value="">निवडा</option>
+                <option value="शेतकरी">शेतकरी</option>
+                <option value="मजूर">मजूर</option>
+                <option value="व्यवसाय">व्यवसाय</option>
+                <option value="विद्यार्थी">विद्यार्थी</option>
+                <option value="नोकरी">नोकरी</option>
+                <option value="गृहिणी">गृहिणी</option>
+                <option value="इतर">इतर</option>
+            </select>
+
+            <button type="submit">माहिती जतन करा</button>
+        </form>
+    </div>
 
     <script>
-        // तालुक्यानुसार गावे अपडेट करण्यासाठी फंक्शन
         function updateVillages() {
             var taluka = document.getElementById("taluka").value;
+            var villageSelect = document.getElementById("village");
+            // safe फिल्टरमुळे कोरी स्क्रीन येणार नाही
+            var villages = {{ villages_data | tojson | safe }};
+            
+            villageSelect.innerHTML = '<option value="">गाव निवडा</option>';
+            if (taluka && villages[taluka]) {
+                villages[taluka].forEach(function(v) {
+                    var opt = document.createElement("option");
+                    opt.value = v;
+                    opt.innerHTML = v;
+                    villageSelect.appendChild(opt);
+                });
+            }
+        }
+    </script>
+</body>
+</html>
