@@ -5,137 +5,90 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>माहिती संकलन फॉर्म</title>
     <style>
-        body { font-family: 'Arial', sans-serif; background-color: #eef2f3; padding: 20px; }
-        .container { max-width: 450px; background: #fff; padding: 30px; border-radius: 15px; margin: auto; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #333; }
-        input, select, button { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        button { background-color: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        button:hover { background-color: #0056b3; }
+        /* मुख्य डिझाइन */
+        body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            background-color: #f0f2f5; 
+            padding: 20px; 
+            margin: 0;
+        }
+        .container { 
+            max-width: 450px; 
+            background: #ffffff; 
+            padding: 25px; 
+            border-radius: 15px; 
+            margin: auto; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
+        }
+
+        /* हेडर (लोगो आणि फोटो) विभाग */
+        .header { 
+            text-align: center; 
+            margin-bottom: 20px; 
+        }
+        .logo { 
+            max-width: 100px; 
+            height: auto; 
+            margin-bottom: 10px;
+        }
+        .banner-photo { 
+            width: 100%; 
+            height: auto; 
+            border-radius: 10px; 
+            object-fit: cover;
+            margin-top: 10px;
+        }
+
+        h2 { 
+            text-align: center; 
+            color: #1a73e8; 
+            margin-bottom: 20px;
+            font-size: 22px;
+        }
+
+        /* इनपुट आणि ड्रॉपडाउन डिझाइन */
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 10px;
+            color: #555;
+        }
+        input, select, button { 
+            width: 100%; 
+            padding: 12px; 
+            margin: 8px 0; 
+            border: 1px solid #ddd; 
+            border-radius: 8px; 
+            box-sizing: border-box; 
+            font-size: 16px; 
+        }
+        input:focus, select:focus {
+            border-color: #1a73e8;
+            outline: none;
+            box-shadow: 0 0 5px rgba(26,115,232,0.2);
+        }
+
+        /* बटण डिझाइन */
+        button { 
+            background-color: #1a73e8; 
+            color: white; 
+            border: none; 
+            cursor: pointer; 
+            font-weight: bold; 
+            margin-top: 20px;
+            transition: background 0.3s;
+        }
+        button:hover { 
+            background-color: #1557b0; 
+        }
+
+        /* मोबाईलसाठी रिस्पॉन्सिव्ह */
+        @media (max-width: 480px) {
+            .container { padding: 15px; }
+        }
     </style>
+
     <script>
+        // तालुक्यानुसार गावे अपडेट करण्यासाठी फंक्शन
         function updateVillages() {
             var taluka = document.getElementById("taluka").value;
-            var villageSelect = document.getElementById("village");
-            var villages = {{ villages_data | tojson }};
-            
-            villageSelect.innerHTML = '<option value="">गाव निवडा</option>';
-            if (villages[taluka]) {
-                villages[taluka].forEach(function(v) {
-                    var opt = document.createElement("option");
-                    opt.value = v;
-                    opt.innerHTML = v;
-                    villageSelect.appendChild(opt);
-                });
-            }
-        }
-    </script>
-</head>
-<body>
-    <div class="container">
-        <h2>माहिती संकलन</h2>
-        <form action="/submit" method="post">
-            <input type="text" name="full_name" placeholder="पूर्ण नाव" required>
-            <input type="date" name="dob" title="जन्मतारीख निवडा" required>
-            <input type="number" name="mobile" placeholder="मोबाईल नंबर" required>
-            
-            <select name="taluka" id="taluka" onchange="updateVillages()" required>
-                <option value="">तालुका निवडा</option>
-                <option value="नांदगाव">नांदगाव</option>
-                <option value="मालेगाव">मालेगाव</option>
-            </select>
-            
-            <select name="village" id="village" required>
-                <option value="">गाव निवडा</option>
-            </select>
-            
-            <select name="gender" required>
-                <option value="">लिंग निवडा</option>
-                <option value="पुरुष">पुरुष</option>
-                <option value="महिला">महिला</option>
-                <option value="इतर">इतर</option>
-            </select>
-            
-            <select name="occupation" required>
-                <option value="">व्यवसाय निवडा</option>
-                <option value="शेतकरी">शेतकरी</option>
-                <option value="मजूर">मजूर</option>
-                <option value="व्यवसाय/व्यापार">व्यवसाय/व्यापार</option>
-                <option value="विद्यार्थी">विद्यार्थी</option>
-                <option value="नोकरी (शासकीय)">नोकरी (शासकीय)</option>
-                <option value="नोकरी (खाजगी)">नोकरी (खाजगी)</option>
-                <option value="गृहिणी">गृहिणी</option>
-                <option value="इतर">इतर</option>
-            </select>
-            
-            <button type="submit">माहिती जतन करा</button>
-        </form>
-    </div>
-</body>
-</html><!DOCTYPE html>
-<html lang="mr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Collection Form</title>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
-        .container { max-width: 500px; background: white; padding: 20px; border-radius: 10px; margin: auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        .logo { text-align: center; margin-bottom: 20px; }
-        .logo img { max-width: 150px; }
-        input, select, button { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        button { background-color: #28a745; color: white; border: none; cursor: pointer; font-size: 16px; }
-        button:hover { background-color: #218838; }
-    </style>
-    <script>
-        function updateVillages() {
-            var taluka = document.getElementById("taluka").value;
-            var villageSelect = document.getElementById("village");
-            var villages = {{ villages_data | tojson }};
-            
-            villageSelect.innerHTML = '<option value="">गाव निवडा</option>';
-            if (villages[taluka]) {
-                villages[taluka].forEach(function(v) {
-                    var opt = document.createElement("option");
-                    opt.value = v;
-                    opt.innerHTML = v;
-                    villageSelect.appendChild(opt);
-                });
-            }
-        }
-    </script>
-</head>
-<body>
-    <div class="container">
-        <div class="logo">
-            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
-        </div>
-        <h2 style="text-align:center;">माहिती संकलन फॉर्म</h2>
-        <form action="/submit" method="post">
-            <input type="text" name="full_name" placeholder="पूर्ण नाव" required>
-            <input type="date" name="dob" required>
-            <input type="number" name="mobile" placeholder="मोबाईल नंबर" required>
-            
-            <select name="taluka" id="taluka" onchange="updateVillages()" required>
-                <option value="">तालुका निवडा</option>
-                <option value="नांदगाव">नांदगाव</option>
-                <option value="मालेगाव">मालेगाव</option>
-            </select>
-            
-            <select name="village" id="village" required>
-                <option value="">गाव निवडा</option>
-            </select>
-            
-            <select name="gender" required>
-                <option value="">लिंग निवडा</option>
-                <option value="पुरुष">पुरुष</option>
-                <option value="महिला">महिला</option>
-                <option value="इतर">इतर</option>
-            </select>
-            
-            <input type="text" name="occupation" placeholder="व्यवसाय" required>
-            
-            <button type="submit">माहिती जतन करा</button>
-        </form>
-    </div>
-</body>
-</html>
