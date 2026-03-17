@@ -9,12 +9,13 @@
         .container { max-width: 450px; background: #fff; padding: 25px; border-radius: 12px; margin: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .header { text-align: center; margin-bottom: 20px; }
         .header img.logo { max-width: 80px; margin-bottom: 10px; }
-        .header img.photo { width: 100%; border-radius: 8px; }
-        h2 { text-align: center; color: #2c3e50; font-size: 20px; }
+        .header img.photo { width: 100%; border-radius: 8px; margin-top: 10px; }
+        h2 { text-align: center; color: #2c3e50; font-size: 20px; margin-top: 10px; }
         label { font-weight: bold; display: block; margin-top: 15px; color: #444; }
         input, select, button { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
-        button { background-color: #27ae60; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 25px; }
+        button { background-color: #27ae60; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 25px; transition: 0.3s; }
         button:hover { background-color: #219150; }
+        .error-text { color: red; font-size: 13px; margin-top: 5px; display: none; }
     </style>
 </head>
 <body>
@@ -26,15 +27,17 @@
         
         <h2>माहिती संकलन फॉर्म</h2>
         
-        <form action="/submit" method="post">
+        <form action="/submit" method="post" onsubmit="return validateForm()">
             <label>पूर्ण नाव</label>
             <input type="text" name="full_name" placeholder="नाव लिहा" required>
 
-            <label>जन्मतारीख</label>
-            <input type="date" name="dob" required>
+            <label>जन्मतारीख (फक्त १८+ वयासाठी)</label>
+            <input type="date" name="dob" id="dob" required>
+            <div id="age-error" class="error-text">तुमचे वय १८ वर्षांपेक्षा जास्त असणे आवश्यक आहे.</div>
 
             <label>मोबाईल नंबर</label>
-            <input type="number" name="mobile" placeholder="Mobile No" required>
+            <input type="tel" name="mobile" id="mobile" placeholder="१० अंकी मोबाईल नंबर" required>
+            <div id="mobile-error" class="error-text">कृपया वैध १० अंकी मोबाईल नंबर टाका.</div>
 
             <label>तालुका निवडा</label>
             <select name="taluka" id="taluka" onchange="updateVillages()" required>
@@ -73,21 +76,58 @@
     </div>
 
     <script>
+        // १. गावांची यादी लोड करण्यासाठीचे फिक्स लॉजिक
+        // Jinja2 कडून येणारा डेटा सुरक्षितपणे JavaScript मध्ये घेतला आहे
+        const villagesData = {{ villages_data | tojson | safe }};
+
         function updateVillages() {
-            var taluka = document.getElementById("taluka").value;
-            var villageSelect = document.getElementById("village");
-            // safe फिल्टरमुळे कोरी स्क्रीन येणार नाही
-            var villages = {{ villages_data | tojson | safe }};
+            const taluka = document.getElementById("taluka").value;
+            const villageSelect = document.getElementById("village");
             
+            // आधीची यादी साफ करा
             villageSelect.innerHTML = '<option value="">गाव निवडा</option>';
-            if (taluka && villages[taluka]) {
-                villages[taluka].forEach(function(v) {
-                    var opt = document.createElement("option");
+            
+            if (taluka && villagesData[taluka]) {
+                villagesData[taluka].forEach(function(v) {
+                    const opt = document.createElement("option");
                     opt.value = v;
-                    opt.innerHTML = v;
+                    opt.textContent = v;
                     villageSelect.appendChild(opt);
                 });
             }
+        }
+
+        // २. वय १८+ ठेवण्यासाठी कॅलेंडरची मर्यादा सेट करणे
+        const today = new Date();
+        const maxYear = today.getFullYear() - 18;
+        const maxDate = new Date(maxYear, today.getMonth(), today.getDate()).toISOString().split('T')[0];
+        document.getElementById("dob").setAttribute("max", maxDate);
+
+        // ३. फॉर्म सबमिट करण्यापूर्वी व्हॅलिडेशन चेक
+        function validateForm() {
+            let isValid = true;
+            
+            // मोबाईल व्हॅलिडेशन (फक्त १० अंक)
+            const mobile = document.getElementById("mobile").value;
+            const mobilePattern = /^[0-9]{10}$/;
+            if (!mobilePattern.test(mobile)) {
+                document.getElementById("mobile-error").style.display = "block";
+                isValid = false;
+            } else {
+                document.getElementById("mobile-error").style.display = "none";
+            }
+
+            // वय व्हॅलिडेशन (पुन्हा एकदा खात्री करण्यासाठी)
+            const dob = new Date(document.getElementById("dob").value);
+            const eighteenYearsAgo = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+            if (dob > eighteenYearsAgo) {
+                document.getElementById("age-error").style.display = "block";
+                isValid = false;
+            } else {
+                document.getElementById("age-error").style.display = "none";
+            }
+
+            return isValid;
         }
     </script>
 </body>
