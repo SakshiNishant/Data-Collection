@@ -7,6 +7,7 @@ from datetime import datetime
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 
+
 # 🔹 Google Sheets कनेक्शन
 def get_gspread_client():
     scope = [
@@ -44,7 +45,7 @@ def index():
     return render_template('index.html', villages_data=villages_data)
 
 
-# 🔹 Form Submit → Google Sheet Save
+# 🔹 Form Submit
 @app.route('/submit', methods=['POST'])
 def submit():
     mobile = request.form.get('mobile')
@@ -76,10 +77,10 @@ def submit():
         return "<h2>माहिती यशस्वीरित्या जतन झाली!</h2><a href='/'>परत जा</a>"
 
     except Exception as e:
-        return f"<h2>चूक झाली: {str(e)}</h2><p>Sheet Service Account सोबत share केली आहे का check करा</p>"
+        return f"<h2>चूक झाली: {str(e)}</h2>"
 
 
-# 🔥 🔹 TODAY BIRTHDAY ROUTE
+# 🔥 Birthday Route
 @app.route('/birthdays')
 def birthdays():
     creds = get_gspread_client()
@@ -93,29 +94,31 @@ def birthdays():
         data = sheet.get_all_values()
 
         today = datetime.now()
-        today_day = today.day
-        today_month = today.month
-
         birthday_list = []
 
         for i in range(1, len(data)):
             row = data[i]
 
             try:
-                dob_str = row[2]  # DOB column
+                dob_str = row[2]
 
-                # 👉 IMPORTANT: तुझा format match कर
-                dob = datetime.strptime(dob_str, "%Y-%m-%d")
+                try:
+                    dob = datetime.strptime(dob_str, "%Y-%m-%d")
+                except:
+                    dob = datetime.strptime(dob_str, "%d-%m-%Y")
 
-                if dob.day == today_day and dob.month == today_month:
+                if dob.day == today.day and dob.month == today.month:
                     birthday_list.append({
                         "name": row[1],
                         "mobile": row[3],
-                        "village": row[5]
+                        "village": row[5],
+                        "gender": row[6],
+                        "occupation": row[7],
+                        "dob": dob_str
                     })
 
             except Exception as e:
-                print(f"DOB Error: {e}")
+                print("DOB Error:", e)
 
         return render_template("birthdays.html", birthdays=birthday_list)
 
@@ -123,7 +126,6 @@ def birthdays():
         return f"<h2>Error: {str(e)}</h2>"
 
 
-# 🔹 Server Run
+# 🔹 Run
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(debug=True)
