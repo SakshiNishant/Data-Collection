@@ -2,10 +2,8 @@ import gspread
 import os
 import json
 from oauth2client.service_account import ServiceAccountCredentials
-from flask import Flask, render_template, request, session, redirect, send_file
+from flask import Flask, render_template, request, session, redirect
 from datetime import datetime
-from PIL import Image, ImageDraw, ImageFont
-import io
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 app.secret_key = "supersecretkey"
@@ -117,7 +115,7 @@ def login():
     return render_template("login.html")
 
 
-# 🎂 ADMIN (Only Birthday)
+# 🎂 ADMIN (Only Today Birthdays)
 @app.route('/admin')
 def admin():
     if not session.get('admin'):
@@ -134,7 +132,7 @@ def admin():
     today = datetime.now()
     birthday_list = []
 
-    for i, row in enumerate(data[1:], start=2):
+    for row in data[1:]:
         try:
             dob_str = row[2]
 
@@ -148,7 +146,6 @@ def admin():
 
             if dob.day == today.day and dob.month == today.month:
                 birthday_list.append({
-                    "row_id": i,
                     "name": row[1],
                     "mobile": row[3],
                     "village": row[5]
@@ -157,46 +154,6 @@ def admin():
             continue
 
     return render_template("admin.html", birthdays=birthday_list)
-
-
-# 🎨 BANNER (10 Templates)
-@app.route('/banner/<int:template_id>/<name>')
-def banner(template_id, name):
-    try:
-        path = f"static/templates/template{template_id}.png"
-        img = Image.open(path)
-        draw = ImageDraw.Draw(img)
-
-        try:
-            font = ImageFont.truetype("arial.ttf", 60)
-        except:
-            font = None
-
-        positions = {
-            1: (200, 800),
-            2: (300, 700),
-            3: (250, 750),
-            4: (200, 780),
-            5: (300, 820),
-            6: (250, 760),
-            7: (220, 800),
-            8: (270, 770),
-            9: (240, 790),
-            10: (260, 810)
-        }
-
-        pos = positions.get(template_id, (200, 800))
-
-        draw.text(pos, name, fill="white", font=font)
-
-        img_io = io.BytesIO()
-        img.save(img_io, 'PNG')
-        img_io.seek(0)
-
-        return send_file(img_io, mimetype='image/png')
-
-    except Exception as e:
-        return f"Banner Error: {str(e)}"
 
 
 # 🚪 LOGOUT
