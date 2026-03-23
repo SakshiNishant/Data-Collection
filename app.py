@@ -10,7 +10,7 @@ app = Flask(__name__, template_folder='templates', static_folder='static')
 app.secret_key = "supersecretkey"
 
 
-# 🔹 Google Sheets
+# 🔹 Google Sheets Connection
 def get_gspread_client():
     scope = [
         "https://spreadsheets.google.com/feeds",
@@ -22,95 +22,149 @@ def get_gspread_client():
     if not creds_json:
         return None
 
-    creds_dict = json.loads(creds_json)
-    return ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+    try:
+        creds_dict = json.loads(creds_json)
+        return ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+    except Exception as e:
+        print("Credentials Error:", e)
+        return None
 
 
-# 🔹 Home
+# 🔹 SAFE VALUE GETTER
+def safe(row, index):
+    return row[index] if len(row) > index else ""
+
+
+# 🔹 HOME PAGE (FIXED)
 @app.route('/')
 def index():
-    return render_template('index.html')
+    villages_data = {'नांदगाव': [], 'मालेगाव': []}
+
+    try:
+        if os.path.exists('Nandgaon.txt'):
+            with open('Nandgaon.txt', 'r', encoding='utf-8') as f:
+                villages_data['नांदगाव'] = [line.strip() for line in f if line.strip()]
+
+        if os.path.exists('Malegaon.txt'):
+            with open('Malegaon.txt', 'r', encoding='utf-8') as f:
+                villages_data['मालेगाव'] = [line.strip() for line in f if line.strip()]
+
+    except Exception as e:
+        print("File Error:", e)
+
+    return render_template('index.html', villages_data=villages_data)
 
 
-# 🔹 Submit
+# 🔹 FORM SUBMIT
 @app.route('/submit', methods=['POST'])
 def submit():
     mobile = request.form.get('mobile')
 
     if not mobile or len(mobile) != 10:
-        return "Invalid Mobile"
+        return "<h2>चूक: मोबाईल नंबर १० अंकी असावा!</h2><a href='/'>परत जा</a>"
 
     creds = get_gspread_client()
-    client = gspread.authorize(creds)
-    sheet = client.open("Data Collection").sheet1
+    if not creds:
+        return "<h2>Google Credentials Missing ❌</h2>"
 
-    row = [
-        datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
-        request.form.get('full_name'),
-        request.form.get('dob'),
-        request.form.get('mobile'),
-        request.form.get('taluka'),
-        request.form.get('village'),
-        request.form.get('gender'),
-        request.form.get('occupation')
-    ]
+    try:
+        client = gspread.authorize(creds)
+        sheet = client.open("Data Collection").sheet1
 
-    sheet.append_row(row)
+        row = [
+            datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
+            request.form.get('full_name'),
+            request.form.get('dob'),
+            request.form.get('mobile'),
+            request.form.get('taluka'),
+            request.form.get('village'),
+            request.form.get('gender'),
+            request.form.get('occupation')
+        ]
 
-    return redirect('/')
+        sheet.append_row(row)
+
+        return "<h2>माहिती यशस्वीरित्या जतन झाली!</h2><a href='/'>परत जा</a>"
+
+    except Exception as e:
+        return f"<h2>Error: {str(e)}</h2>"
 
 
-# 🔥 Birthday
+# 🔹 BIRTHDAY PAGE
 @app.route('/birthdays')
 def birthdays():
     creds = get_gspread_client()
-    client = gspread.authorize(creds)
-    sheet = client.open("Data Collection").sheet1
+    if not creds:
+        return "Google Credentials Missing ❌"
 
-    data = sheet.get_all_values()
+    try:
+        client = gspread.authorize(creds)
+        sheet = client.open("Data Collection").sheet1
+        data = sheet.get_all_values()
+    except Exception as e:
+        return f"Sheet Error: {str(e)}"
 
     today = datetime.now()
     birthday_list = []
 
-    for i in range(1, len(data)):
-        row = data[i]
-
+    for row in data[1:]:
         try:
+            dob_str = safe(row, 2)
+
             try:
-                dob = datetime.strptime(row[2], "%Y-%m-%d")
+                dob = datetime.strptime(dob_str, "%Y-%m-%d")
             except:
-                dob = datetime.strptime(row[2], "%d-%m-%Y")
+                try:
+                    dob = datetime.strptime(dob_str, "%d-%m-%Y")
+                except:
+                    continue
 
             if dob.day == today.day and dob.month == today.month:
-                birthday_list.append(row)
+                birthday_list.append({
+                    "name": safe(row, 1),
+                    "mobile": safe(row, 3),
+                    "taluka": safe(row, 4),
+                    "village": safe(row, 5),
+                    "gender": safe(row, 6),
+                    "occupation": safe(row, 7),
+                    "dob": dob_str
+                })
 
-        except:
-            pass
+        except Exception as e:
+            print("Birthday Error:", e)
 
-    return render_template("birthdays.html", data=birthday_list)
+    return render_template("birthdays.html", birthdays=birthday_list)
 
 
-# 🔐 Login
+# 🔐 LOGIN
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        if request.form['username'] == "admin" and request.form['password'] == "1234":
+        if request.form.get('username') == "admin" and request.form.get('password') == "1234":
             session['admin'] = True
             return redirect('/admin')
+        else:
+            return "Wrong Credentials"
+
     return render_template("login.html")
 
 
-# 🔥 ADMIN DASHBOARD (PREMIUM)
+# 🔥 ADMIN DASHBOARD
 @app.route('/admin')
 def admin():
     if not session.get('admin'):
         return redirect('/login')
 
     creds = get_gspread_client()
-    client = gspread.authorize(creds)
-    sheet = client.open("Data Collection").sheet1
+    if not creds:
+        return "Google Credentials Missing ❌"
 
-    data = sheet.get_all_values()
+    try:
+        client = gspread.authorize(creds)
+        sheet = client.open("Data Collection").sheet1
+        data = sheet.get_all_values()
+    except Exception as e:
+        return f"Sheet Error: {str(e)}"
 
     total = len(data) - 1
     today = datetime.now()
@@ -120,15 +174,22 @@ def admin():
     genders = []
 
     for row in data[1:]:
-        villages.append(row[5])
-        genders.append(row[6])
+        village = safe(row, 5)
+        gender = safe(row, 6)
+
+        villages.append(village)
+        genders.append(gender)
 
         try:
-            dob = datetime.strptime(row[2], "%d-%m-%Y")
-            if dob.day == today.day and dob.month == today.month:
-                birthday_count += 1
+            dob = datetime.strptime(safe(row, 2), "%Y-%m-%d")
         except:
-            pass
+            try:
+                dob = datetime.strptime(safe(row, 2), "%d-%m-%Y")
+            except:
+                continue
+
+        if dob.day == today.day and dob.month == today.month:
+            birthday_count += 1
 
     village_stats = Counter(villages)
     gender_stats = Counter(genders)
@@ -141,26 +202,33 @@ def admin():
                            gender_stats=gender_stats)
 
 
-# ❌ Delete
+# ❌ DELETE
 @app.route('/delete/<int:row_id>')
 def delete(row_id):
     if not session.get('admin'):
         return redirect('/login')
 
     creds = get_gspread_client()
-    client = gspread.authorize(creds)
-    sheet = client.open("Data Collection").sheet1
+    if not creds:
+        return "Google Credentials Missing ❌"
 
-    sheet.delete_rows(row_id)
+    try:
+        client = gspread.authorize(creds)
+        sheet = client.open("Data Collection").sheet1
+        sheet.delete_rows(row_id)
+    except Exception as e:
+        return f"Delete Error: {str(e)}"
+
     return redirect('/admin')
 
 
-# 🚪 Logout
+# 🚪 LOGOUT
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect('/login')
 
 
+# 🔹 RUN
 if __name__ == "__main__":
     app.run(debug=True)
