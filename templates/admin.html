@@ -36,25 +36,17 @@ h2 {
     color:#666;
 }
 
-/* Buttons */
+/* Button */
 .btn {
-    padding:8px 15px;
+    padding:10px 20px;
     border:none;
     border-radius:20px;
     cursor:pointer;
-    margin-right:10px;
-}
-
-.edit {
-    background:#2196F3;
-    color:white;
-}
-
-.wish {
     background:#25D366;
     color:white;
 }
 
+/* Logout */
 .logout {
     position:fixed;
     top:10px;
@@ -81,12 +73,8 @@ h2 {
 
         <br>
 
-        <a href="/edit/{{ p.row_id }}">
-            <button class="btn edit">✏️ Edit</button>
-        </a>
-
         <a href="https://wa.me/91{{ p.mobile }}?text=🎉 वाढदिवसाच्या हार्दिक शुभेच्छा!">
-            <button class="btn wish">🎉 शुभेच्छा द्या</button>
+            <button class="btn">🎉 शुभेच्छा द्या</button>
         </a>
     </div>
     {% endfor %}
