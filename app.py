@@ -10,7 +10,6 @@ app = Flask(__name__, template_folder='templates', static_folder='static')
 # १. Google Sheets कनेक्शन सेटअप
 def get_gspread_client():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    # Vercel च्या Settings मधील GOOGLE_CREDENTIALS मधून डेटा वाचणे
     creds_json = os.environ.get('GOOGLE_CREDENTIALS')
     
     if not creds_json:
@@ -27,7 +26,6 @@ def get_gspread_client():
 @app.route('/')
 def index():
     villages_data = {'नांदगाव': [], 'मालेगाव': []}
-    # तुमचा मूळ फाईल पाथ तसाच ठेवला आहे
     file_paths = {'नांदगाव': 'Nandgaon.txt', 'मालेगाव': 'Malegaon.txt'}
     
     for taluka, file_name in file_paths.items():
@@ -45,7 +43,6 @@ def index():
 def submit():
     mobile = request.form.get('mobile')
     
-    # मोबाईल नंबर व्हॅलिडेशन
     if not mobile or len(mobile) != 10:
         return "<h2>चूक: मोबाईल नंबर १० अंकी असावा!</h2><a href='/'>परत जा</a>"
     
@@ -55,7 +52,6 @@ def submit():
 
     try:
         client = gspread.authorize(creds)
-        # Google Sheet चे नाव तपासून घ्या
         sheet = client.open("Data Collection").sheet1
         
         row = [
@@ -75,7 +71,7 @@ def submit():
     except Exception as e:
         return f"<h2>चूक झाली: {str(e)}</h2>"
 
-# --- ३. वाढदिवसाचे नवीन पेज (Direct Link: /today-birthdays) ---
+# --- ३. वाढदिवसाचे पेज (/today-birthdays) ---
 @app.route('/today-birthdays')
 def today_birthdays():
     creds = get_gspread_client()
@@ -87,17 +83,14 @@ def today_birthdays():
         sheet = client.open("Data Collection").sheet1
         all_records = sheet.get_all_records()
         
-        # आजचा दिवस आणि महिना मिळवा (उदा. "03-23")
-        # टीप: HTML date input सामान्यतः YYYY-MM-DD फॉरमॅटमध्ये डेटा पाठवते
+        # आजची तारीख शोधण्यासाठी (Format: MM-DD)
         today_date = datetime.now().strftime("%m-%d")
         
-        birthday_list = []
-
+        birthday_members = []
         for row in all_records:
             dob_val = str(row.get('dob', ''))
-            # जर DOB मध्ये आजचा महिना आणि दिवस असेल तर लिस्टमध्ये टाका
             if dob_val and today_date in dob_val:
-                birthday_list.append({
+                birthday_members.append({
                     'name': row.get('full_name'),
                     'mobile': row.get('mobile'),
                     'village': row.get('village'),
@@ -105,7 +98,7 @@ def today_birthdays():
                 })
 
         formatted_today = datetime.now().strftime("%d %B %Y")
-        return render_template('birthdays.html', members=birthday_list, today=formatted_today)
+        return render_template('birthdays.html', members=birthday_members, today=formatted_today)
 
     except Exception as e:
         return f"<h2>वाढदिवस शोधताना अडचण आली: {str(e)}</h2>"
