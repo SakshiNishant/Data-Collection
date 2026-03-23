@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Edit Data</title>
+
+<style>
+body {
+    font-family:Poppins;
+    background:#f4f6f9;
+    text-align:center;
+    padding-top:50px;
+}
+
+form {
+    background:white;
+    padding:20px;
+    display:inline-block;
+    border-radius:10px;
+    box-shadow:0 5px 15px rgba(0,0,0,0.1);
+}
+
+input {
+    padding:10px;
+    margin:10px;
+    width:250px;
+    border-radius:5px;
+    border:1px solid #ccc;
+}
+
+button {
+    padding:10px 20px;
+    background:#ff5722;
+    color:white;
+    border:none;
+    border-radius:5px;
+}
+</style>
+
+</head>
+
+<body>
+
+<h2>✏️ Edit Details</h2>
+
+<form method="POST">
+    <input type="text" name="name" value="{{ row[1] }}" placeholder="Name"><br>
+    <input type="text" name="mobile" value="{{ row[3] }}" placeholder="Mobile"><br>
+    <input type="text" name="village" value="{{ row[5] }}" placeholder="Village"><br>
+
+    <br>
+    <button type="submit">Update</button>
+</form>
+
+</body>
+</html>
