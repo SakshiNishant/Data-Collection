@@ -1,4 +1,186 @@
 <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Dashboard</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+
+<style>
+body {
+    margin:0;
+    font-family:Poppins;
+    display:flex;
+    background:#f4f6f9;
+}
+
+/* Sidebar */
+.sidebar {
+    width:220px;
+    background:#1e1e2f;
+    color:white;
+    height:100vh;
+    padding:20px;
+}
+.sidebar h2 {
+    text-align:center;
+}
+.sidebar a {
+    display:block;
+    color:white;
+    padding:10px;
+    margin:10px 0;
+    text-decoration:none;
+    border-radius:5px;
+}
+.sidebar a:hover {
+    background:#ff5722;
+}
+
+/* Main */
+.main {
+    flex:1;
+    padding:20px;
+}
+
+/* Cards */
+.cards {
+    display:flex;
+    gap:20px;
+}
+.card {
+    background:white;
+    padding:20px;
+    flex:1;
+    border-radius:10px;
+    box-shadow:0 5px 15px rgba(0,0,0,0.1);
+    text-align:center;
+}
+.card h3 {
+    margin:0;
+    color:#888;
+}
+.card h1 {
+    margin:10px 0;
+    color:#ff5722;
+}
+
+/* Table */
+table {
+    width:100%;
+    border-collapse:collapse;
+    margin-top:20px;
+    background:white;
+    border-radius:10px;
+    overflow:hidden;
+}
+th, td {
+    padding:12px;
+    text-align:center;
+}
+th {
+    background:#ff5722;
+    color:white;
+}
+tr:nth-child(even) {
+    background:#f2f2f2;
+}
+
+/* Search */
+.search-box {
+    margin-top:20px;
+}
+.search-box input {
+    padding:10px;
+    width:300px;
+    border-radius:20px;
+    border:1px solid #ccc;
+}
+
+/* Responsive */
+@media(max-width:768px){
+    .cards { flex-direction:column; }
+    .sidebar { display:none; }
+}
+</style>
+</head>
+
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+    <h2>🚀 Admin</h2>
+    <a href="/admin">📊 Dashboard</a>
+    <a href="/birthdays">🎂 Birthdays</a>
+    <a href="/logout">🚪 Logout</a>
+</div>
+
+<!-- Main Content -->
+<div class="main">
+
+<h1>📊 Dashboard</h1>
+
+<!-- Cards -->
+<div class="cards">
+    <div class="card">
+        <h3>Total Users</h3>
+        <h1>{{ total }}</h1>
+    </div>
+    <div class="card">
+        <h3>Today Birthday</h3>
+        <h1>{{ birthday_count }}</h1>
+    </div>
+</div>
+
+<!-- Search -->
+<div class="search-box">
+    <input type="text" id="search" placeholder="🔍 नाव, गाव, मोबाईल शोधा..." onkeyup="search()">
+</div>
+
+<!-- Table -->
+<table id="table">
+<tr>
+<th>ID</th>
+<th>Name</th>
+<th>DOB</th>
+<th>Mobile</th>
+<th>Taluka</th>
+<th>Village</th>
+<th>Gender</th>
+<th>Occupation</th>
+</tr>
+
+{% for row in data[1:] %}
+<tr>
+<td>{{ loop.index }}</td>
+<td>{{ row[1] }}</td>
+<td>{{ row[2] }}</td>
+<td>{{ row[3] }}</td>
+<td>{{ row[4] }}</td>
+<td>{{ row[5] }}</td>
+<td>{{ row[6] }}</td>
+<td>{{ row[7] }}</td>
+</tr>
+{% endfor %}
+</table>
+
+</div>
+
+<!-- Search Script -->
+<script>
+function search() {
+    let input = document.getElementById("search").value.toLowerCase();
+    let rows = document.querySelectorAll("#table tr");
+
+    rows.forEach((row, i) => {
+        if(i==0) return;
+        row.style.display = row.innerText.toLowerCase().includes(input) ? "" : "none";
+    });
+}
+</script>
+
+</body>
+</html><!DOCTYPE html>
 <html>
 <head>
     <title>Admin Dashboard</title>
