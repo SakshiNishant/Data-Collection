@@ -23,9 +23,11 @@ def get_gspread_client():
         print(f"Credentials Error: {e}")
         return None
 
+# --- १. मुख्य होम पेज ---
 @app.route('/')
 def index():
     villages_data = {'नांदगाव': [], 'मालेगाव': []}
+    # तुमचा मूळ फाईल पाथ तसाच ठेवला आहे
     file_paths = {'नांदगाव': 'Nandgaon.txt', 'मालेगाव': 'Malegaon.txt'}
     
     for taluka, file_name in file_paths.items():
@@ -38,6 +40,7 @@ def index():
     
     return render_template('index.html', villages_data=villages_data)
 
+# --- २. डेटा सबमिट करणे ---
 @app.route('/submit', methods=['POST'])
 def submit():
     mobile = request.form.get('mobile')
@@ -46,17 +49,15 @@ def submit():
     if not mobile or len(mobile) != 10:
         return "<h2>चूक: मोबाईल नंबर १० अंकी असावा!</h2><a href='/'>परत जा</a>"
     
-    # २. गुगल शीटमध्ये डेटा लिहिणे
     creds = get_gspread_client()
     if not creds:
         return "<h2>Error: Google Credentials सापडले नाहीत!</h2>"
 
     try:
         client = gspread.authorize(creds)
-        # तुमच्या Google Sheet चे नाव खालील अवतरण चिन्हात अचूक लिहा (उदा. "Data Collection")
+        # Google Sheet चे नाव तपासून घ्या
         sheet = client.open("Data Collection").sheet1
         
-        # फॉर्ममधील डेटा गोळा करणे
         row = [
             datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
             request.form.get('full_name'),
@@ -72,7 +73,42 @@ def submit():
         return "<h2>माहिती यशस्वीरित्या जतन झाली!</h2><a href='/'>परत जा</a>"
     
     except Exception as e:
-        return f"<h2>चूक झाली: {str(e)}</h2><p>टीप: तुम्ही तुमची गुगल शीट Service Account ईमेलसोबत शेअर केली आहे का?</p>"
+        return f"<h2>चूक झाली: {str(e)}</h2>"
+
+# --- ३. वाढदिवसाचे नवीन पेज (Direct Link: /today-birthdays) ---
+@app.route('/today-birthdays')
+def today_birthdays():
+    creds = get_gspread_client()
+    if not creds:
+        return "<h2>Error: Google Credentials सापडले नाहीत!</h2>"
+
+    try:
+        client = gspread.authorize(creds)
+        sheet = client.open("Data Collection").sheet1
+        all_records = sheet.get_all_records()
+        
+        # आजचा दिवस आणि महिना मिळवा (उदा. "03-23")
+        # टीप: HTML date input सामान्यतः YYYY-MM-DD फॉरमॅटमध्ये डेटा पाठवते
+        today_date = datetime.now().strftime("%m-%d")
+        
+        birthday_list = []
+
+        for row in all_records:
+            dob_val = str(row.get('dob', ''))
+            # जर DOB मध्ये आजचा महिना आणि दिवस असेल तर लिस्टमध्ये टाका
+            if dob_val and today_date in dob_val:
+                birthday_list.append({
+                    'name': row.get('full_name'),
+                    'mobile': row.get('mobile'),
+                    'village': row.get('village'),
+                    'taluka': row.get('taluka')
+                })
+
+        formatted_today = datetime.now().strftime("%d %B %Y")
+        return render_template('birthdays.html', members=birthday_list, today=formatted_today)
+
+    except Exception as e:
+        return f"<h2>वाढदिवस शोधताना अडचण आली: {str(e)}</h2>"
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
