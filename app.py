@@ -2,20 +2,22 @@ import gspread
 import os
 import json
 from oauth2client.service_account import ServiceAccountCredentials
-from flask import Flask, render_template, request, session, redirect
+from flask import Flask, render_template, request, session, redirect, send_file
 from datetime import datetime
+from PIL import Image, ImageDraw, ImageFont
+import io
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 app.secret_key = "supersecretkey"
 
 
-# 🔹 Google Sheets Connection (SAFE)
+# 🔹 Google Sheets Connection
 def get_gspread_client():
     try:
         creds_json = os.environ.get('GOOGLE_CREDENTIALS')
 
         if not creds_json:
-            print("❌ No GOOGLE_CREDENTIALS found")
+            print("No credentials found")
             return None
 
         creds_dict = json.loads(creds_json)
@@ -28,11 +30,11 @@ def get_gspread_client():
         return ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 
     except Exception as e:
-        print("❌ Credential Error:", e)
+        print("Credential Error:", e)
         return None
 
 
-# 🔹 HOME PAGE (SAFE)
+# 🔹 HOME
 @app.route('/')
 def index():
     villages_data = {'नांदगाव': [], 'मालेगाव': []}
@@ -45,17 +47,18 @@ def index():
         if os.path.exists('Malegaon.txt'):
             with open('Malegaon.txt', 'r', encoding='utf-8') as f:
                 villages_data['मालेगाव'] = [line.strip() for line in f if line.strip()]
-
     except Exception as e:
-        print("❌ File Error:", e)
+        print("File Error:", e)
 
     return render_template('index.html', villages_data=villages_data)
 
 
-# 🔹 FORM SUBMIT
+# 🔹 SUBMIT (Duplicate Check)
 @app.route('/submit', methods=['POST'])
 def submit():
-    mobile = request.form.get('mobile')
+    name = request.form.get('full_name').strip().lower()
+    mobile = request.form.get('mobile').strip()
+    village = request.form.get('village').strip().lower()
 
     if not mobile or len(mobile) != 10:
         return "<h2>चूक: मोबाईल नंबर १० अंकी असावा!</h2><a href='/'>परत जा</a>"
@@ -68,11 +71,25 @@ def submit():
         client = gspread.authorize(creds)
         sheet = client.open("Data Collection").sheet1
 
+        data = sheet.get_all_values()
+
+        # 🔥 Duplicate check
+        for row in data[1:]:
+            try:
+                if (
+                    name == row[1].strip().lower() and
+                    mobile == row[3].strip() and
+                    village == row[5].strip().lower()
+                ):
+                    return "<h2>❌ ही माहिती आधीच नोंदलेली आहे!</h2><a href='/'>परत जा</a>"
+            except:
+                continue
+
         row = [
             datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
             request.form.get('full_name'),
             request.form.get('dob'),
-            request.form.get('mobile'),
+            mobile,
             request.form.get('taluka'),
             request.form.get('village'),
             request.form.get('gender'),
@@ -81,30 +98,26 @@ def submit():
 
         sheet.append_row(row)
 
-        return "<h2>माहिती यशस्वीरित्या जतन झाली!</h2><a href='/'>परत जा</a>"
+        return "<h2>✅ माहिती जतन झाली!</h2><a href='/'>परत जा</a>"
 
     except Exception as e:
-        return f"<h2>❌ Error: {str(e)}</h2>"
+        return f"<h2>Error: {str(e)}</h2>"
 
 
 # 🔐 LOGIN
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    try:
-        if request.method == 'POST':
-            if request.form.get('username') == "admin" and request.form.get('password') == "1234":
-                session['admin'] = True
-                return redirect('/admin')
-            else:
-                return "Wrong Credentials ❌"
+    if request.method == 'POST':
+        if request.form.get('username') == "admin" and request.form.get('password') == "1234":
+            session['admin'] = True
+            return redirect('/admin')
+        else:
+            return "Wrong Credentials ❌"
 
-        return render_template("login.html")
-
-    except Exception as e:
-        return f"Login Error: {str(e)}"
+    return render_template("login.html")
 
 
-# 🎂 ADMIN (ONLY TODAY BIRTHDAYS)
+# 🎂 ADMIN (Only Birthday)
 @app.route('/admin')
 def admin():
     if not session.get('admin'):
@@ -114,71 +127,76 @@ def admin():
     if not creds:
         return "Google Credentials Missing ❌"
 
-    try:
-        client = gspread.authorize(creds)
-        sheet = client.open("Data Collection").sheet1
-        data = sheet.get_all_values()
+    client = gspread.authorize(creds)
+    sheet = client.open("Data Collection").sheet1
+    data = sheet.get_all_values()
 
-        today = datetime.now()
-        birthday_list = []
+    today = datetime.now()
+    birthday_list = []
 
-        for i, row in enumerate(data[1:], start=2):
+    for i, row in enumerate(data[1:], start=2):
+        try:
+            dob_str = row[2]
+
             try:
-                dob_str = row[2]
-
+                dob = datetime.strptime(dob_str, "%Y-%m-%d")
+            except:
                 try:
-                    dob = datetime.strptime(dob_str, "%Y-%m-%d")
+                    dob = datetime.strptime(dob_str, "%d-%m-%Y")
                 except:
-                    try:
-                        dob = datetime.strptime(dob_str, "%d-%m-%Y")
-                    except:
-                        continue
+                    continue
 
-                if dob.day == today.day and dob.month == today.month:
-                    birthday_list.append({
-                        "row_id": i,
-                        "name": row[1],
-                        "mobile": row[3],
-                        "village": row[5],
-                        "dob": dob_str
-                    })
+            if dob.day == today.day and dob.month == today.month:
+                birthday_list.append({
+                    "row_id": i,
+                    "name": row[1],
+                    "mobile": row[3],
+                    "village": row[5]
+                })
+        except:
+            continue
 
-            except Exception as e:
-                print("Birthday Error:", e)
-
-        return render_template("admin.html", birthdays=birthday_list)
-
-    except Exception as e:
-        return f"Admin Error: {str(e)}"
+    return render_template("admin.html", birthdays=birthday_list)
 
 
-# ✏️ EDIT
-@app.route('/edit/<int:row_id>', methods=['GET', 'POST'])
-def edit(row_id):
-    if not session.get('admin'):
-        return redirect('/login')
-
-    creds = get_gspread_client()
-    if not creds:
-        return "Google Credentials Missing ❌"
-
+# 🎨 BANNER (10 Templates)
+@app.route('/banner/<int:template_id>/<name>')
+def banner(template_id, name):
     try:
-        client = gspread.authorize(creds)
-        sheet = client.open("Data Collection").sheet1
+        path = f"static/templates/template{template_id}.png"
+        img = Image.open(path)
+        draw = ImageDraw.Draw(img)
 
-        if request.method == 'POST':
-            sheet.update(f"B{row_id}", request.form.get('name'))
-            sheet.update(f"D{row_id}", request.form.get('mobile'))
-            sheet.update(f"F{row_id}", request.form.get('village'))
+        try:
+            font = ImageFont.truetype("arial.ttf", 60)
+        except:
+            font = None
 
-            return redirect('/admin')
+        positions = {
+            1: (200, 800),
+            2: (300, 700),
+            3: (250, 750),
+            4: (200, 780),
+            5: (300, 820),
+            6: (250, 760),
+            7: (220, 800),
+            8: (270, 770),
+            9: (240, 790),
+            10: (260, 810)
+        }
 
-        row = sheet.row_values(row_id)
+        pos = positions.get(template_id, (200, 800))
 
-        return render_template("edit.html", row=row, row_id=row_id)
+        draw.text(pos, name, fill="white", font=font)
+
+        img_io = io.BytesIO()
+        img.save(img_io, 'PNG')
+        img_io.seek(0)
+
+        return send_file(img_io, mimetype='image/png')
 
     except Exception as e:
-        return f"Edit Error: {str(e)}"
+        return f"Banner Error: {str(e)}"
 
 
 # 🚪 LOGOUT
@@ -188,5 +206,5 @@ def logout():
     return redirect('/login')
 
 
-# 🔥 VERCEL ENTRY POINT (IMPORTANT)
+# 🔥 VERCEL ENTRY
 app = app
